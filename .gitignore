@@ -1,0 +1,5 @@
+*.jpg
+
+**/.ipynb_checkpoints/*
+*/data/*
+*/lib/*
