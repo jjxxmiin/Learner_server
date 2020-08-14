@@ -1,5 +1,7 @@
+__pycache__
+.idea/
 *.jpg
+train_origin_datasets/
 
-**/.ipynb_checkpoints/*
-*/data/*
-*/lib/*
+JFace/models/*
+JFace/lib/*

@@ -14,3 +14,16 @@ python api.py
 - 3. 얼굴을 자른다.
 - 4. 누군지 인식한다.
 
+## Face Detection / Face Randmarking
+
+- Dlib
+- MTCNN
+
+## Face Recognition
+
+- Dlib : compare distance
+- InceptionResnetV1
+
+## Reference
+
+- [https://github.com/ageitgey/face_recognition](https://github.com/ageitgey/face_recognition)
