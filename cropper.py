@@ -28,6 +28,7 @@ for class_path in origin_dataset_path.iterdir():
 
         if not crop_path.exists():
             img = Image.open(file_path)
+            img = img.resize((512, 512))
             crop_img = mtcnn(img, save_path=str(crop_path))
             numpy_crop_img = crop_img.detach().numpy().transpose(1, 2, 0)
 

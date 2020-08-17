@@ -5,10 +5,12 @@ from pathlib import Path
 
 video_capture = cv2.VideoCapture(0)
 
-encoding_model = "cnn"
+# load_path = "./checkpoint/best_model.pth"
 dataset_path = Path("train_origin_datasets")
 
-known_face_encodings, known_face_names = JFace.get_dataset(dataset_path, encoding_model)
+JFace.load_model(load_path=None, classify=False)
+
+known_face_encodings, known_face_names = JFace.get_dataset(dataset_path, encoding_model="cnn")
 
 face_locations = []
 face_encodings = []
@@ -21,8 +23,8 @@ while True:
     rgb_frame = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
 
     if process_this_frame:
-        face_locations = JFace.get_face_locations(rgb_frame)
-        face_encodings = JFace.get_cnn_face_encodings(rgb_frame)
+        face_encodings, face_locations = JFace.get_cnn_face_encodings(rgb_frame, locations=True)
+
         face_names = []
         for face_encoding in face_encodings:
             matches = JFace.compare_faces(known_face_encodings, face_encoding)
@@ -37,17 +39,20 @@ while True:
 
     process_this_frame = not process_this_frame
 
-    for (top, right, bottom, left), name in zip(face_locations, face_names):
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
+    if face_locations is not None:
+        for (left, top, right, bottom), name in zip(face_locations, face_names):
+            left, top, right, bottom = int(left), int(top), int(right), int(bottom) # x1, y2, x2, y1
 
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
 
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+
+            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
     cv2.imshow('Video', frame)
 

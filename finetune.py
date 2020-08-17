@@ -1,6 +1,7 @@
-import numpy as np
+import os
 import torch
 import argparse
+import numpy as np
 from torch import nn, optim
 from torchvision import transforms, datasets
 from facenet_pytorch import InceptionResnetV1, fixed_image_standardization
@@ -9,9 +10,10 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 parser.add_argument("--train_data", type=str, default="train_crop_datasets")
 parser.add_argument("--batch_size", type=int, default=32)
-parser.add_argument("--lr", type=float, default=0.01)
-parser.add_argument("--epoch", type=float, default=20)
+parser.add_argument("--lr", type=float, default=0.001)
+parser.add_argument("--epoch", type=float, default=30)
 parser.add_argument("--device", type=str, default="cuda")
+parser.add_argument("--save_path", type=str, default="./checkpoint")
 args = parser.parse_args()
 
 
@@ -33,8 +35,12 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
+if not os.path.exists(args.save_path):
+    os.mkdir(args.save_path)
+
+
 # get dataset / dataloader
-train_transformer = transforms.Compose([transforms.RandomHorizontalFlip(),
+train_transformer = transforms.Compose([np.float32,
                                         transforms.ToTensor(),
                                         fixed_image_standardization])
 
@@ -54,14 +60,19 @@ criterion = nn.CrossEntropyLoss().to(args.device)
 
 train_iter = len(train_loader)
 
+for p in model.parameters():
+    p.requires_grad = False
+
+for p in model.logits.parameters():
+    p.requires_grad = True
+
 # optimizer/scheduler
 # optimizer = optim.SGD(model.logits.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+optimizer = optim.Adam(model.parameters(), lr=args.lr)
 scheduler = optim.lr_scheduler.MultiStepLR(optimizer=optimizer,
-                                           milestones=[10, 15],
-                                           gamma=0.1)
+                                           milestones=[10, 20])
 
-best_test_acc = 0
+best_acc = 0
 
 # train
 for e in range(args.epoch):
@@ -101,3 +112,6 @@ for e in range(args.epoch):
 
     print(f"Epoch [ {args.epoch} / {e} ] \n"
           f" + TRAIN [ Loss / Top1 Acc / Top5 Acc ] : [ {train_loss} / {top1_acc} / {top5_acc} ]")
+
+    if best_acc < top1_acc:
+        torch.save(model.state_dict(), os.path.join(args.save_path, "best_model.pth"))

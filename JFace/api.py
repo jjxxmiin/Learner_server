@@ -8,21 +8,28 @@ from tqdm import tqdm
 from PIL import Image
 from facenet_pytorch import InceptionResnetV1, MTCNN, extract_face
 
-
 pose_predictor_5_point = dlib.shape_predictor('JFace/models/shape_predictor_5_face_landmarks.dat')
 pose_predictor_68_point = dlib.shape_predictor('JFace/models/shape_predictor_68_face_landmarks.dat')
 face_encoder = dlib.face_recognition_model_v1('JFace/models/dlib_face_recognition_resnet_model_v1.dat')
 cnn_face_detector = dlib.cnn_face_detection_model_v1("JFace/models/mmod_human_face_detector.dat")
 face_detector = dlib.get_frontal_face_detector()
 resnet = InceptionResnetV1(pretrained='vggface2').eval()
+
 mtcnn = MTCNN(image_size=160, margin=0, min_face_size=20, thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True)
+
+
+def load_model(load_path=None, classify=True):
+    if load_path is not None:
+        resnet.state_dict(torch.load(load_path))
+
+    resnet.classify = classify
 
 
 def get_dataset(dataset_path, encoding_model="dlib"):
     known_face_encoding = []
     known_face_names = []
 
-    classes = os.listdir(dataset_path)[:100]
+    classes = os.listdir(dataset_path)[:10]
 
     for class_name in tqdm(classes, total=len(classes)):
         for file_path in os.listdir(dataset_path / class_name):
@@ -44,7 +51,7 @@ def get_face_locations(img, number_of_times_to_upsample=1, model="hog"):
     """
     Face locations
     """
-    faces = get_faces(img, number_of_times_to_upsample, model)
+    faces = get_rect_faces(img, number_of_times_to_upsample, model)
 
     if model == "cnn":
         return [get_face_box(rect_to_css(face.rect), img.shape) for face in faces]
@@ -77,10 +84,11 @@ def load_image_file(file, mode='RGB'):
     return np.array(im)
 
 
-def get_faces(img, number_of_times_to_upsample=1, model="hog"):
+def get_rect_faces(img, number_of_times_to_upsample=1, model="hog"):
     """
     Face
     """
+
     face_detector = get_detector(model)
     faces = face_detector(img, number_of_times_to_upsample)
 
@@ -104,7 +112,7 @@ def get_face_randmarks(img, face_locations=None, model="large"):
     """
 
     if face_locations is None:
-        face_locations = get_faces(img)
+        face_locations = get_rect_faces(img)
     else:
         face_locations = [css_to_rect(face_location) for face_location in face_locations]
 
@@ -126,23 +134,24 @@ def get_face_encodings(img, known_face_locations=None, num_jitters=1, model="sma
     return [np.array(face_encoder.compute_face_descriptor(img, raw_landmark_set, num_jitters)) for raw_landmark_set in raw_landmarks]
 
 
-def get_cnn_face_encodings(img):
+def get_cnn_face_encodings(img, locations=False):
     """
     Face cnn encoding
     """
-
     encodings = []
-
     boxes, probs = mtcnn.detect(img)
 
     if boxes is not None:
         for box in boxes:
-            face_image = extract_face(img, box)
+            face_image = extract_face(img, box, save_path="./test.jpg")
 
             img_embedding = resnet(face_image.unsqueeze(0))
             encodings.append(img_embedding[0].detach().numpy())
 
-    return encodings
+    if locations:
+        return encodings, boxes
+    else:
+        return encodings
 
 
 def compare_faces(known_face_encodings, face_encoding_to_check, tolerance=0.6):
@@ -153,4 +162,5 @@ def get_face_distance(face_encodings, face_to_compare):
     if len(face_encodings) == 0:
         return np.empty((0))
 
+    # sum(abs(a)^[2])^[1/2]
     return np.linalg.norm(face_encodings - face_to_compare, axis=1)
