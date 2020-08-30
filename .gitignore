@@ -1,7 +1,8 @@
 __pycache__
 .idea/
 *.jpg
-train_origin_datasets/
+datasets/
+checkpoint/
 
 JFace/models/*
 JFace/lib/*
