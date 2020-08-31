@@ -15,25 +15,33 @@ encoding_folder_path = 'datasets/encoding_datasets/'
 train_folder_path = 'datasets/train_datasets/'
 infer_folder_path = 'datasets/infer_datasets/'
 
-def save_json(data, data_path):
-    with open(data_path, 'w') as f:
+def save_json(data, file_path):
+    with open(file_path, 'w') as f:
         json.dump(data, f)
 
 
-def load_json(data_path):
-    with open(data_path, 'r') as f:
+def load_json(file_path):
+    with open(file_path, 'r') as f:
         data = json.load(f)
 
     return data
 
 
-def train(data_path, name):
+def read_image(file_path) :
+    stream = open( file_path.encode("utf-8") , "rb")
+    bytes = bytearray(stream.read())
+    numpyArray = np.asarray(bytes, dtype=np.uint8)
+
+    return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
+
+
+def train(file_path, name):
     # get image
-    img = cv2.imread(data_path)
+    img = read_image(file_path)
     img = cv2.resize(img, (0, 0), fx=0.25, fy=0.25)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    filename = os.path.split(data_path)[-1]
+    filename = os.path.split(file_path)[-1]
     time = filename.split('.')[0]
     encoding = JFace.get_face_encodings(img)[0]
 
@@ -57,8 +65,7 @@ def train(data_path, name):
         return "얼굴 등록이 완료되었습니다."
 
 
-def infer(data_path):
-
+def infer(file_path):
     known_face_encodings = []
     known_face_names = []
 
@@ -69,7 +76,7 @@ def infer(data_path):
         known_face_names.append(data['name'])
 
     # get image
-    img = cv2.imread(data_path)
+    img = read_image(file_path)
     img = cv2.resize(img, (0, 0), fx=0.25, fy=0.25)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -114,8 +121,7 @@ def handle_train():
     save_file_path = os.path.join(train_folder_path, label, filename)
     imagefile.save(save_file_path)
 
-    sleep(1)
-
+    print(save_file_path)
     message = train(save_file_path, label)
 
     return message
