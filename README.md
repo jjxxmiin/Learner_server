@@ -9,20 +9,11 @@ python api.py
 
 ## Face recognition
 
-- 1. 얼굴 위치를 찾는다.
-- 2. 얼굴 특징점을 찾고 동일 위치에 맞추어 준다.
-- 3. 얼굴을 자른다.
-- 4. 누군지 인식한다.
-
-## Face Detection / Face Randmarking
-
-- Dlib
-- MTCNN
-
-## Face Recognition
-
-- Dlib : compare distance
-- InceptionResnetV1
+1. Face Detection (Dlib)
+2. Face Randmark (Dlib, MTCNN)
+3. Face Alignment (Dlib)
+4. Face Crop (Dlib)
+5. Face Identification (Dlib, InceptionResnetV1)
 
 ## Reference
 
