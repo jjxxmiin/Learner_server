@@ -2,6 +2,28 @@
 
 - Flask : 1.1.2
 - Werkzeug : 0.16.1
+- opencv 
+- dlib
+- facenet-pytorch
+
+1. Install requirements
+
+```sh
+pip install flask cmake
+pip install opencv-python dlib facenet-pytorch
+```
+
+2. Make model folder
+
+```
+mkdir JFace/models
+```
+
+2. Download model files
+
+- [https://github.com/ageitgey/face_recognition_models/tree/master/face_recognition_models/models](https://github.com/ageitgey/face_recognition_models/tree/master/face_recognition_models/models)
+
+3. Start app
 
 ```sh
 python api.py

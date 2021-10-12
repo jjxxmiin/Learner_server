@@ -35,18 +35,22 @@ def read_image(file_path) :
     return cv2.imdecode(numpyArray , cv2.IMREAD_UNCHANGED)
 
 
-def train(file_path, name):
+def train(file_path, name, mode):
     # get image
     img = read_image(file_path)
     img = cv2.resize(img, (0, 0), fx=0.25, fy=0.25)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
+    if mode == 'gallery':
+        img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
+
     filename = os.path.split(file_path)[-1]
     time = filename.split('.')[0]
-    encoding = JFace.get_face_encodings(img)[0]
 
-    if len(encoding) == 0:
-        return "얼굴이 존재하지 않습니다 ㅠㅠ"
+    try:
+        encoding = JFace.get_face_encodings(img)[0]
+    except:
+        return "얼굴이 아닙니다. 사진을 다시 입력해주세요."
 
     else:
         # make data
@@ -83,7 +87,7 @@ def infer(file_path):
     face_locations = JFace.get_face_locations(img)
     face_encodings = JFace.get_face_encodings(img, face_locations)
 
-    name = "Unknown"
+    name = "누군지 모르겠습니다."
 
     face_names = []
 
@@ -103,8 +107,8 @@ def infer(file_path):
 app = flask.Flask(__name__)
 
 
-@app.route('/train', methods = ['GET', 'POST'])
-def handle_train():
+@app.route('/train/capture', methods = ['GET', 'POST'])
+def handle_train_capture():
     imagefile = flask.request.files['image']
     label = flask.request.form['label']
 
@@ -122,7 +126,31 @@ def handle_train():
     imagefile.save(save_file_path)
 
     print(save_file_path)
-    message = train(save_file_path, label)
+    message = train(save_file_path, label, mode='capture')
+
+    return message
+
+
+@app.route('/train/gallery', methods = ['GET', 'POST'])
+def handle_train_gallery():
+    imagefile = flask.request.files['image']
+    label = flask.request.form['label']
+
+    filename = imagefile.filename
+
+    # filename = werkzeug.utils.secure_filename(imagefile.filename)
+    print("\nReceived image File name : " + filename)
+
+    save_folder_path = os.path.join(train_folder_path, label)
+
+    if not os.path.exists(save_folder_path):
+        os.makedirs(save_folder_path)
+
+    save_file_path = os.path.join(train_folder_path, label, filename)
+    imagefile.save(save_file_path)
+
+    print(save_file_path)
+    message = train(save_file_path, label, mode='gallery')
 
     return message
 
